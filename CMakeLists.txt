@@ -35,7 +35,7 @@ set(CMAKE_ASM_FLAGS_INIT "${MCU_FLAGS} ${FPU_FLAGS}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_BUILD_TYPE Debug)
 
-project(as5600 LANGUAGES C VERSION 0.1)
+project(bldc-foc-as5600 LANGUAGES C VERSION 0.1)
 
 ####################################################################################################
 ### MAIN
