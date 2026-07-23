@@ -4,3 +4,8 @@
 Since it used interrupt method instead of mesh all the thing in the while loop.
 
 But PWM(DMA) might still be required for future hight speed use case.
+
+# BLDC spec
+
+[2804](https://wiki.dfrobot.com/fit1034/)
+    - [spec](https://wiki.dfrobot.com/fit1034/#tech_specs)

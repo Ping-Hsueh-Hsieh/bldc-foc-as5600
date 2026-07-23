@@ -21,10 +21,13 @@
 #include "dma.h"
 #include "gpio.h"
 #include "i2c.h"
+#include "tim.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
+#include "as5600.h"
+#include "motor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,11 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DEV_ASSERT(cond, ...) \
-  do {                        \
-    while (!cond) {}          \
-  } while (0)
-#define UNREACHABLE(...) DEV_ASSERT(0, __VA_ARGS__)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,8 +57,6 @@ COM_InitTypeDef BspCOMInit;
 void SystemClock_Config(void);
 static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
-static void read_angle(void);
-static void handle_angle(void);
 static void toggle_led(void);
 
 /* USER CODE END PFP */
@@ -103,6 +100,8 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_I2C1_Init();
+  MX_TIM1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -127,7 +126,8 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+  AS5600_init();
+  motor_init();
   uint16_t runnable_10ms_cnt = 10;
   uint16_t runnable_1000ms_cnt = 1000;
   uint32_t prev = HAL_GetTick();
@@ -136,11 +136,10 @@ int main(void)
     curr = HAL_GetTick();
     if (curr == prev) continue;
     prev = curr;
-    read_angle();
+    AS5600_read_angle();
 
     if (runnable_10ms_cnt > 0) runnable_10ms_cnt--;
     if (runnable_10ms_cnt == 0) {
-      handle_angle();
       runnable_10ms_cnt = 10;
     }
 
@@ -221,54 +220,6 @@ static void toggle_led(void)
   BSP_LED_Toggle(led_cnt);
   led_cnt++;
   led_cnt %= LEDn;
-}
-
-#define AS5600_I2C_DEV_ADDR_R (AS5600_I2C_ADDR << 1 | 1)
-#define AS5600_I2C_DEV_ADDR_W (AS5600_I2C_ADDR << 1)
-#define AS5600_I2C_DEV_ADDR_SHIFT (AS5600_I2C_ADDR << 1)
-#define AS5600_I2C_REG_RAW_ANGLE (0x0C)
-static volatile bool i2c_mem_read_done = true;
-uint8_t buf[2] = {0};
-static uint16_t as5600_raw_angle = 0;
-static float as5600_angle = 0.0f;
-
-static void read_angle(void)
-{
-  if (!i2c_mem_read_done) {
-    UNREACHABLE();
-    return;
-  }
-  i2c_mem_read_done = false;
-  if (HAL_I2C_Mem_Read_DMA(&hi2c1, AS5600_I2C_DEV_ADDR_SHIFT, AS5600_I2C_REG_RAW_ANGLE, I2C_MEMADD_SIZE_8BIT, buf, 2) != HAL_OK) {
-    UNREACHABLE();
-  }
-}
-
-static void handle_angle(void) {}
-
-void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef* hi2c)
-{
-  __NOP();
-}
-
-void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef* hi2c)
-{
-  if (hi2c->Instance == hi2c1.Instance) {
-    as5600_raw_angle = ((uint16_t)buf[0] << 8) | buf[1];
-    as5600_raw_angle &= 0x0FFF;
-    as5600_angle = ((float)as5600_raw_angle + 1.0f) / 4096.0f * 360.0f;
-    i2c_mem_read_done = true;
-  }
-}
-
-void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef* hi2c)
-{
-  __NOP();
-}
-
-void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef* hi2c)
-{
-  __NOP();
 }
 
 /* USER CODE END 4 */
