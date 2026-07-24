@@ -44,6 +44,11 @@ void motor_init(void)
   g_state.target_ang_rad = M_PI / 3.f;
 
   g_state.init_ang_rad = _electricalAngle(AS5600_angle.ang_rad, g_state.motor_param->pole_pairs);
+
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+
   HAL_TIM_Base_Start_IT(&htim2);
 
   // enable the drive board
