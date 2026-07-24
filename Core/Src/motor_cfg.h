@@ -1,6 +1,10 @@
 #ifndef MOTOR_CFG_H_
 #define MOTOR_CFG_H_
 
+#define CCR_A (TIM1->CCR2)
+#define CCR_B (TIM4->CCR4)
+#define CCR_C (TIM1->CCR1)
+
 typedef struct {
     float pole_pairs;
     float rated_rpm;

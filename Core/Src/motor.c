@@ -14,8 +14,8 @@
 
 static float _normalizeAngle(float angle);
 static float _electricalAngle(float shaft_angle, int pole_pairs);
-static void setPwm(float Ua, float Ub, float Uc, TIM_TypeDef* TIM_BASE);
-static void setPhaseVoltage(float Uq, float Ud, float angle_el, TIM_TypeDef* TIM_BASE);
+static void setPwm(float Ua, float Ub, float Uc);
+static void setPhaseVoltage(float Uq, float Ud, float angle_el);
 
 // static float cal_angular_vel(float angle_now);
 
@@ -47,7 +47,7 @@ void motor_init(void)
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
   HAL_TIM_Base_Start_IT(&htim2);
 
@@ -76,18 +76,16 @@ static void svpwm(void)
 #endif
 }
 
-static float Uq = 0.1;
-
 static void ang_ctrl(void)
 {
   float ang_rad = AS5600_angle.ang_rad;
-  // float angle_error = g_state.target_ang_rad - ang_rad;
-  // angle_error = _normalizeAngle(angle_error);
-  // if (angle_error > M_PI) {
-  //   angle_error -= 2 * M_PI;
-  // }
-  // float Uq = _constrain(Kp * (angle_error) / M_PI * 180, -voltage_power_supply / 2, voltage_power_supply / 2);
-  setPhaseVoltage(Uq, 0, _electricalAngle(ang_rad, g_state.motor_param->pole_pairs), TIM1);
+  float angle_error = g_state.target_ang_rad - ang_rad;
+  angle_error = _normalizeAngle(angle_error);
+  if (angle_error > M_PI) {
+    angle_error -= 2 * M_PI;
+  }
+  float Uq = _constrain(Kp * (angle_error) / M_PI * 180, -voltage_power_supply / 4, voltage_power_supply / 4);
+  setPhaseVoltage(Uq, 0, _electricalAngle(ang_rad, g_state.motor_param->pole_pairs));
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim)
@@ -132,11 +130,7 @@ float _electricalAngle(float shaft_angle, int pole_pairs)
   return _normalizeAngle(((float)pole_pairs * shaft_angle) - g_state.init_ang_rad);
 }
 
-float g_dc_a = 0;
-float g_dc_b = 0;
-float g_dc_c = 0;
-
-void setPwm(float Ua, float Ub, float Uc, TIM_TypeDef* TIM_BASE)
+void setPwm(float Ua, float Ub, float Uc)
 {
 
   // 限制上限
@@ -149,17 +143,13 @@ void setPwm(float Ua, float Ub, float Uc, TIM_TypeDef* TIM_BASE)
   float dc_b = _constrain(Ub / voltage_power_supply, 0.0f, 1.0f);
   float dc_c = _constrain(Uc / voltage_power_supply, 0.0f, 1.0f);
 
-  g_dc_a = dc_a;
-  g_dc_b = dc_b;
-  g_dc_c = dc_c;
-
   //写入PWM到PWM 0 1 2 通道
-  TIM_BASE->CCR1 = (uint32_t)roundf(dc_a * period);
-  TIM_BASE->CCR2 = (uint32_t)roundf(dc_b * period);
-  TIM_BASE->CCR3 = (uint32_t)roundf(dc_c * period);
+  CCR_A = (uint32_t)roundf(dc_a * period);
+  CCR_B = (uint32_t)roundf(dc_b * period);
+  CCR_C = (uint32_t)roundf(dc_c * period);
 }
 
-void setPhaseVoltage(float Uq, float Ud, float angle_el, TIM_TypeDef* TIM_BASE)
+void setPhaseVoltage(float Uq, float Ud, float angle_el)
 {
   (void)Ud;
   angle_el = _normalizeAngle(angle_el + g_state.init_ang_rad);
@@ -171,5 +161,5 @@ void setPhaseVoltage(float Uq, float Ud, float angle_el, TIM_TypeDef* TIM_BASE)
   float Ua = Ualpha + voltage_power_supply / 2;
   float Ub = (sqrt(3) * Ubeta - Ualpha) / 2 + voltage_power_supply / 2;
   float Uc = (-Ualpha - sqrt(3) * Ubeta) / 2 + voltage_power_supply / 2;
-  setPwm(Ua, Ub, Uc, TIM_BASE);
+  setPwm(Ua, Ub, Uc);
 }

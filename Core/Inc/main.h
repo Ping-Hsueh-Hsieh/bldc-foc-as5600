@@ -61,12 +61,12 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 #define AS5600_I2C_ADDR 0x36
-#define MOTOR_EN_Pin GPIO_PIN_14
-#define MOTOR_EN_GPIO_Port GPIOE
+#define MOTOR_EN_Pin GPIO_PIN_3
+#define MOTOR_EN_GPIO_Port GPIOF
+#define ENCODER_DIR_Pin GPIO_PIN_14
+#define ENCODER_DIR_GPIO_Port GPIOD
 #define ENCODER_PGO_Pin GPIO_PIN_12
 #define ENCODER_PGO_GPIO_Port GPIOG
-#define ENCODER_DIR_Pin GPIO_PIN_14
-#define ENCODER_DIR_GPIO_Port GPIOG
 #define SCL_Pin GPIO_PIN_8
 #define SCL_GPIO_Port GPIOB
 #define SDA_Pin GPIO_PIN_9
